@@ -38,12 +38,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy pre-built Python dependencies from the builder stage
-COPY --from=builder /root/.local /root/.local
 
-# Copy application source code into the final container
-COPY . .
+# 1. Create a non-root user with a home directory
+RUN useradd --create-home appuser
 
+# 2. Copy dependencies into the new user's home folder
+COPY --from=builder /root/.local /home/appuser/.local
+
+# 3. Copy application files and set correct ownership
+COPY --chown=appuser:appuser . .
+
+# 4. Switch to the non-root user
+USER appuser
 # Expose port 8000 for the FastAPI server
 EXPOSE 8000
 
