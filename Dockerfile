@@ -17,41 +17,38 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install packages into the user local directory (/root/.local)
+RUN python -m venv /opt/venv
+ENV PATH="/opt/venv/bin:${PATH}"
+
 COPY requirements.txt .
-RUN pip install --no-cache-dir --user -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
 
 # ===================================================
-# STAGE 2: Final (Minimal production image)
+# STAGE 2: Final (Corrected)
 # ===================================================
 FROM python:3.11-slim AS final
 
 WORKDIR /app
 
-# Set environment variables and append user binaries path to system PATH
+# 1. Create non-root user FIRST
+RUN useradd --create-home appuser
+
+# 2. Point PATH to appuser's directory, NOT /root/
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PATH="/root/.local/bin:${PATH}"
+    PATH="/home/appuser/.local/bin:${PATH}"
 
-# Install only the lightweight runtime libraries needed for PostgreSQL
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
-
-# 1. Create a non-root user with a home directory
-RUN useradd --create-home appuser
-
-# 2. Copy dependencies into the new user's home folder
-COPY --from=builder /root/.local /home/appuser/.local
-
-# 3. Copy application files and set correct ownership
+# 3. Copy files to /home/appuser/.local and set ownership
+COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
 COPY --chown=appuser:appuser . .
 
-# 4. Switch to the non-root user
 USER appuser
-# Expose port 8000 for the FastAPI server
+
 EXPOSE 8000
 
-# Entry point command: launch Uvicorn pointing to the main app module
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
