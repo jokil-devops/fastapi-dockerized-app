@@ -37,14 +37,14 @@ RUN useradd --create-home appuser
 # 2. Point PATH to appuser's directory, NOT /root/
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PATH="/home/appuser/.local/bin:${PATH}"
+    PATH="/opt/venv/bin:${PATH}"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     && rm -rf /var/lib/apt/lists/*
 
 # 3. Copy files to /home/appuser/.local and set ownership
-COPY --from=builder --chown=appuser:appuser /root/.local /home/appuser/.local
+COPY --from=builder --chown=appuser:appuser /opt/venv /opt/venv 
 COPY --chown=appuser:appuser . .
 
 USER appuser
