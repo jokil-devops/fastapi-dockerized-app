@@ -12,23 +12,25 @@ Instead of querying PostgreSQL on every request, the application introduces Redi
 
 
 
-┌─────────────────────────┐
-                  │   1. Check Redis Cache  │
-                  └────────────┬────────────┘
-                               │
-                    ┌──────────┴──────────┐
-                    │                     │
-               [ Cache HIT ]        [ Cache MISS ]
-                    │                     │
-                    ▼                     ▼
-             Return instantly       Query PostgreSQL DB
-             (Latency: ~2ms)              │
-                                          ▼
-                                    Save result to Redis (TTL)
-                                          │
-                                          ▼
-                                    Return response
-                                    (Latency: ~50ms)
+
+
+               ┌─────────────────────────┐
+               │   1. Check Redis Cache  │
+               └────────────┬────────────┘
+                            │
+                 ┌──────────┴──────────┐
+                 │                     │
+            [ Cache HIT ]        [ Cache MISS ]
+                 │                     │
+                 ▼                     ▼
+          Return instantly       Query PostgreSQL DB
+          (Latency: ~2ms)              │
+                                       ▼
+                                 Save result to Redis (TTL)
+                                       │
+                                       ▼
+                                 Return response
+                                 (Latency: ~50ms)
 
 
 
@@ -81,10 +83,4 @@ docker compose up -d --build
 Check that all containers are healthy:
 docker compose ps
 
-## 📖 API Documentation & Testing
 
-Once containers are running, open your browser and access:
-
-Interactive Swagger UI: http://localhost:8000/docs
-
-ReDoc Documentation: http://localhost:8000/redoc
